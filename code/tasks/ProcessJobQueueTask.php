@@ -1,5 +1,6 @@
 <?php
 use AsyncPHP\Doorman\Rule\InMemoryRule;
+use AsyncPHP\Doorman\Rule;
 
 /**
  * Task used to process the job queue
@@ -8,6 +9,7 @@ use AsyncPHP\Doorman\Rule\InMemoryRule;
  * @license BSD http://silverstripe.org/bsd-license/
  */
 class ProcessJobQueueTask extends BuildTask {
+
 	/**
 	 * @config
 	 *
@@ -16,11 +18,10 @@ class ProcessJobQueueTask extends BuildTask {
 	private static $engine = 'default';
 
 	/**
-	 * @config
 	 *
-	 * @var int
+	 * @var Rule[]
 	 */
-	private static $processes = -1;
+	protected $defaultRules = array();
 
 	/**
 	 * @return string
@@ -180,10 +181,9 @@ class ProcessJobQueueTask extends BuildTask {
 		$manager = new DoormanProcessManager();
 		// $manager->setLogPath(__DIR__);
 
-		if ($this->config()->processes > 0) {
-			$rule = new InMemoryRule();
-			$rule->setProcesses($this->config()->processes);
-
+		// Assign default rules
+		$defaultRules = $this->getDefaultRules();
+		if ($defaultRules) foreach($defaultRules as $rule) {
 			$manager->addRule($rule);
 		}
 
@@ -202,7 +202,24 @@ class ProcessJobQueueTask extends BuildTask {
 			sleep(1);
 
 			$descriptor = $this->getNextJobDescriptorWithoutMutex($request);
-		};
+		}
+	}
+
+
+	/**
+	 * Assign default rules for this task
+	 *
+	 * @param Rule[] $rules
+	 */
+	public function setDefaultRules($rules) {
+		$this->defaultRules = $rules;
+	}
+
+	/**
+	 * @return Rule[] List of rules
+	 */
+	public function getDefaultRules() {
+		return $this->defaultRules;
 	}
 
 	/**
