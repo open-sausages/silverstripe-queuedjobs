@@ -9,7 +9,7 @@ class DoormanProcessManager extends ProcessManager
 	 *
 	 * @return string
 	 */
-	protected function getWorker() {
+	public function getWorker() {
 		return BASE_PATH . "/framework/cli-script.php dev/tasks/ProcessJobQueueChildTask";
 	}
 }
