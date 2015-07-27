@@ -11,8 +11,8 @@ Injector:
     class: 'AsyncPHP\Doorman\Rule\InMemoryRule'
     properties:
       Processes: 1
-      MinimumProcessorLoad: 0
-      MaximumProcessorLoad: 100
+      MinimumProcessorUsage: 0
+      MaximumProcessorUsage: 100
   ProcessJobQueueTask:
     properties:
       DefaultRules:
