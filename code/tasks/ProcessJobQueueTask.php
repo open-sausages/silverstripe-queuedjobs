@@ -199,9 +199,9 @@ class ProcessJobQueueTask extends BuildTask {
 				$manager->addTask(new DoormanQueuedJobTask($descriptor));
 			}
 
-			$descriptor = $this->getNextJobDescriptorWithoutMutex($request);
-
 			sleep(1);
+
+			$descriptor = $this->getNextJobDescriptorWithoutMutex($request);
 		};
 	}
 
