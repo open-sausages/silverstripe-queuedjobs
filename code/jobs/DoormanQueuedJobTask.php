@@ -1,10 +1,11 @@
 <?php
 
+use AsyncPHP\Doorman\Cancellable;
 use AsyncPHP\Doorman\Expires;
 use AsyncPHP\Doorman\Process;
 use AsyncPHP\Doorman\Task;
 
-class DoormanQueuedJobTask implements Task, Expires, Process {
+class DoormanQueuedJobTask implements Task, Expires, Process, Cancellable {
 	/**
 	 * @var int
 	 */
@@ -14,6 +15,15 @@ class DoormanQueuedJobTask implements Task, Expires, Process {
 	 * @var QueuedJobDescriptor
 	 */
 	protected $descriptor;
+
+	/**
+	 * Reload descriptor from DB
+	 */
+	protected function refreshDescriptor() {
+		if($this->descriptor) {
+			$this->descriptor = QueuedJobDescriptor::get()->byID($this->descriptor->ID);
+		}
+	}
 
 	/**
 	 * @inheritdoc
@@ -104,7 +114,7 @@ class DoormanQueuedJobTask implements Task, Expires, Process {
 	 * @return bool
 	 */
 	public function ignoresRules() {
-		if (method_exists($this->descriptor, 'ignoreRules')) {
+		if ($this->descriptor->hasMethod('ignoreRules')) {
 			return $this->descriptor->ignoreRules();
 		}
 
@@ -115,7 +125,7 @@ class DoormanQueuedJobTask implements Task, Expires, Process {
 	 * @return bool
 	 */
 	public function stopsSiblings() {
-		if (method_exists($this->descriptor, 'stopsSiblings')) {
+		if ($this->descriptor->hasMethod('stopsSiblings')) {
 			return $this->descriptor->stopsSiblings();
 		}
 
@@ -128,7 +138,7 @@ class DoormanQueuedJobTask implements Task, Expires, Process {
 	 * @return int
 	 */
 	public function getExpiresIn() {
-		if (method_exists($this->descriptor, 'getExpiresIn')) {
+		if ($this->descriptor->hasMethod('getExpiresIn')) {
 			return $this->descriptor->getExpiresIn();
 		}
 
@@ -143,10 +153,38 @@ class DoormanQueuedJobTask implements Task, Expires, Process {
 	 * @return bool
 	 */
 	public function shouldExpire($startedAt) {
-		if (method_exists($this->descriptor, 'shouldExpire')) {
+		if ($this->descriptor->hasMethod('shouldExpire')) {
 			return $this->descriptor->shouldExpire($startedAt);
 		}
 
 		return true;
 	}
+
+	/**
+	 * @inheritdoc
+	 *
+	 * @return bool
+	 */
+	public function canRunTask() {
+		$this->refreshDescriptor();
+		return in_array(
+			$this->descriptor->JobStatus,
+			array(
+				QueuedJob::STATUS_NEW,
+				QueuedJob::STATUS_INIT,
+				QueuedJob::STATUS_WAIT
+			)
+		);
+	}
+
+	/**
+	 * @inheritdoc
+	 *
+	 * @return bool
+	 */
+	public function isCancelled() {
+		$this->refreshDescriptor();
+		return $this->descriptor->JobStatus === QueuedJob::STATUS_CANCELLED;
+	}
+
 }
