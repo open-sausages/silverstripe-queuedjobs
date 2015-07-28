@@ -15,6 +15,10 @@ Injector:
       MaximumProcessorUsage: 100
   ProcessJobQueueTask:
     properties:
+      # Change to DoormanRunner for async processing
+      TaskRunner: %$QueueRunner
+  DoormanRunner:
+    properties:
       DefaultRules:
         - '%$DefaultRule'
 
